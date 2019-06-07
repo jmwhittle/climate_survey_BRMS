@@ -11,13 +11,305 @@ knitr::opts_chunk$set(warning = F)
 knitr::opts_chunk$set(message = F)
 ```
 
-
 ```{r}
 library(tidyverse); theme_set(theme_minimal())
+library(lme4)
 library(brms)
 ```
 
 ```{r}
-data = read_csv("cs2019_data.csv")
+# data from qualtrics requires a lot of cleaning. I will move this to its own script
+# the data loaded has already been cleaned (prior to imputations, onehotencoding)
+data = read_csv("cs2019_data_cleaned.csv")[,-1]
+data_key = read_csv("cs2019_data_key.csv")
+```
+
+```{r}
+# renaming fixed effects
+colnames(data)[colnames(data) == "Q47"] <- "dependent"
+colnames(data)[colnames(data) == "Q51"] <- "disability"
+```
+
+```{r}
+# Random-effects plotting function
+ranef_plot <- function(MLM_model, ran_val){
+  
+  rr1 <- ranef(MLM_model, condVar = T)
+  
+  rr2 <- data.frame(x_term = rownames(rr1[[ran_val]]),
+                  int = unname(rr1[[ran_val]]),
+                  se = sqrt(c(attr(rr1[[ran_val]], "postVar"))))
+  
+  rr3 <- transform(rr2, term = reorder(x_term, int))
+  
+  plot <- rr3 %>%
+  ggplot(aes(x_term, int, ymin=int-1.96*se, ymax=int+1.96*se)) + 
+  geom_pointrange()
+  
+  return(plot)
+}
+```
+
+# Data quality checks
+
+```{r}
+# Q44 Sex ID
+data %>% group_by(Q44) %>% tally()
+```
+
+```{r}
+# Q43 Gender
+data %>% group_by(Q43) %>% tally() %>% arrange(desc(n))
+
+# trying to drop those groups with less than 6
+data <- data %>% filter(Q43 == "Woman" |
+                          Q43 == "Man" |
+                          Q43 == "No Answer" |
+                          Q43 == "Nonbinary (gender identity which does not fit the male/female binary) or genderfluid (gender identity that varies over time)" |
+                          Q43 == "Another identity (please specify)" |
+                          Q43 == "Man,Another identity (please specify)" |
+                          Q43 == "Unsure or undecided" |
+                          Q43 == "Trans or transgender" |
+                          Q43 == "Woman,Another identity (please specify)")
+```
+
+```{r}
+# ethnicity
+eth_list <- data %>% group_by(Q45) %>% tally() %>% filter(n > 10)
+
+data <- data %>% filter(Q45 %in% eth_list$Q45) # shouldn't drop should just re-code to other
+
+data %>% 
+```
+
+
+#Q9 Broken up
+## Safe
+
+```{r}
+safe <- glmer(
+  safe ~ 
+    dependent + 
+    disability + 
+    (1|Q2) + 
+    (1|Q6) + 
+    (1|Q43) + 
+    (1|Q44) + 
+    (1|Q45) + 
+    (1|Q50) +
+    (1|Q55) + 
+    (1|Q48) + 
+    (1|Q46) + 
+    (1|status), 
+  data = data,
+  family = "binomial"
+)
+```
+
+```{r, echo=F, include=F, eval=F}
+# ranef plots for Safe MLM
+ranef_plot(safe, 1) + coord_flip() # Religion
+
+ranef_plot(safe, 2) + coord_flip() # Ethnicity
+
+ranef_plot(safe, 3) + coord_flip() # Gender
+
+ranef_plot(safe, 4) + coord_flip() # Primary Campus
+
+ranef_plot(safe, 5) + coord_flip() # Status at SLCC
+
+ranef_plot(safe, 6) + coord_flip() # Eduction Level
+
+ranef_plot(safe, 7) + coord_flip() # Division/Department
+
+ranef_plot(safe, 8) + coord_flip() # Relationship Status
+ 
+ranef_plot(safe, 9) + coord_flip() # Sex ID
+
+ranef_plot(safe, 10) + coord_flip() # Primary Campus Role
+```
+
+## Welcome
+
+```{r}
+welcome <- glmer(
+  welcome ~ 
+    dependent + 
+    disability + 
+    (1|Q2) + 
+    (1|Q6) + 
+    (1|Q43) + 
+    (1|Q44) + 
+    (1|Q45) + 
+    (1|Q50) +
+    (1|Q55) + 
+    (1|Q48) + 
+    (1|Q46) + 
+    (1|status), 
+  data = data,
+  family = "binomial"
+)
+```
+
+```{r, echo=F, include=F, eval=F}
+# ranef plots for welcome MLM
+ranef_plot(welcome, 1) + coord_flip() # Religion
+
+ranef_plot(welcome, 2) + coord_flip() # Ethnicity
+
+ranef_plot(welcome, 3) + coord_flip() # Gender
+
+ranef_plot(welcome, 4) + coord_flip() # Primary Campus
+
+ranef_plot(welcome, 5) + coord_flip() # Status at SLCC
+
+ranef_plot(welcome, 6) + coord_flip() # Eduction Level
+
+ranef_plot(welcome, 7) + coord_flip() # Division/Department
+
+ranef_plot(welcome, 8) + coord_flip() # Relationship Status
+ 
+ranef_plot(welcome, 9) + coord_flip() # Sex ID
+
+ranef_plot(welcome, 10) + coord_flip() # Primary Campus Role
+```
+
+## belong
+
+```{r}
+belong <- glmer(
+  belong ~ 
+    dependent + 
+    disability + 
+    (1|Q2) + 
+    (1|Q6) + 
+    (1|Q43) + 
+    (1|Q44) + 
+    (1|Q45) + 
+    (1|Q50) +
+    (1|Q55) + 
+    (1|Q48) + 
+    (1|Q46) + 
+    (1|status), 
+  data = data,
+  family = "binomial"
+)
+```
+
+```{r, echo=F, include=F, eval=F}
+# ranef plots for belong MLM
+ranef_plot(belong, 1) + coord_flip() # Religion
+
+ranef_plot(belong, 2) + coord_flip() # Ethnicity
+
+ranef_plot(belong, 3) + coord_flip() # Gender
+
+ranef_plot(belong, 4) + coord_flip() # Primary Campus
+
+ranef_plot(belong, 5) + coord_flip() # Status at SLCC
+
+ranef_plot(belong, 6) + coord_flip() # Eduction Level
+
+ranef_plot(belong, 7) + coord_flip() # Division/Department
+
+ranef_plot(belong, 8) + coord_flip() # Relationship Status
+ 
+ranef_plot(belong, 9) + coord_flip() # Sex ID
+
+ranef_plot(belong, 10) + coord_flip() # Primmary Campus Role
+```
+
+
+
+# Excluded question
+
+```{r}
+excluded_Yes <- glmer(
+  excluded_Yes ~ 
+    dependent + 
+    disability + 
+    (1|Q2) + 
+    (1|Q6) + 
+    (1|Q43) + 
+    (1|Q44) + 
+    (1|Q45) + 
+    (1|Q50) +
+    (1|Q55) + 
+    (1|Q48) + 
+    (1|Q46) + 
+    (1|status), 
+  data = data,
+  family = "binomial"
+)
+```
+
+```{r, echo=F, include=F, eval=F}
+# ranef plots for excluded_Yes MLM
+ranef_plot(excluded_Yes, 1) + coord_flip() # Religion
+
+ranef_plot(excluded_Yes, 2) + coord_flip() # Ethnicity
+
+ranef_plot(excluded_Yes, 3) + coord_flip() # Gender
+
+ranef_plot(excluded_Yes, 4) + coord_flip() # Primary Campus
+
+ranef_plot(excluded_Yes, 5) + coord_flip() # Status at SLCC
+
+ranef_plot(excluded_Yes, 6) + coord_flip() # Eduction Level
+
+ranef_plot(excluded_Yes, 7) + coord_flip() # Division/Department
+
+ranef_plot(excluded_Yes, 8) + coord_flip() # Relationship Status
+ 
+ranef_plot(excluded_Yes, 9) + coord_flip() # Sex ID
+
+ranef_plot(excluded_Yes, 10) + coord_flip() # Primmary Campus Role
+```
+
+# slcc comfort
+
+```{r}
+data_scom <- data %>% filter(slcc_comfort > 0)
+
+slcc_com <- glmer(
+  slcc_comfort ~ 
+    dependent + 
+    disability + 
+    (1|Q2) + 
+    (1|Q6) + 
+    (1|Q43) + 
+    (1|Q44) + 
+    (1|Q45) + 
+    (1|Q50) +
+    (1|Q55) + 
+    (1|Q48) + 
+    (1|Q46) + 
+    (1|status), 
+  data = data_scom,
+  family = "binomial"
+)
+```
+
+```{r, echo=F, include=F, eval=F}
+# ranef plots for Safe MLM
+ranef_plot(excluded_Yes, 1) + coord_flip() # Religion
+
+ranef_plot(excluded_Yes, 2) + coord_flip() # Ethnicity
+
+ranef_plot(excluded_Yes, 3) + coord_flip() # Gender
+
+ranef_plot(excluded_Yes, 4) + coord_flip() # Primary Campus
+
+ranef_plot(excluded_Yes, 5) + coord_flip() # Status at SLCC
+
+ranef_plot(excluded_Yes, 6) + coord_flip() # Eduction Level
+
+ranef_plot(excluded_Yes, 7) + coord_flip() # Division/Department
+
+ranef_plot(excluded_Yes, 8) + coord_flip() # Relationship Status
+ 
+ranef_plot(excluded_Yes, 9) + coord_flip() # Sex ID
+
+ranef_plot(excluded_Yes, 10) + coord_flip() # Primmary Campus Role
 ```
 

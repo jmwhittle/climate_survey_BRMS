@@ -20,15 +20,15 @@ data.info()
 
 
 # combining campus statuses into one variable
-data['test'] = data["Q3"].combine_first(data["Q4"])
-data['status'] = data["test"].combine_first(data["Q5"])
+data['temp'] = data["Q3"].combine_first(data["Q4"])
+data['status'] = data["temp"].combine_first(data["Q5"])
 
 
 # turning Q9 into three distinct outcome dummies
 Q9 = data["Q9"].str.split(',', expand = True) # this doesn't split them clean shouldn't use get_dummies
 
 # Custome conditional dummies for Q9
-# where
+# welcome
 def welcome(x, y, z):
     if x == 'I feel welcome at SLCC.':
         return 1
@@ -128,6 +128,8 @@ data_rd = data[["slcc_comfort", "div_dept_comfort",
                 "Q44", "Q45", "Q50", "Q55", "Q48",
                 "Q46", "Q47", "Q51", "status"]] 
 
-data_rd = data_rd.fillna("NA")
+data_rd = data_rd.fillna("No Answer")
 
 data_rd.to_csv("cs2019_data_cleaned.csv")
+data_key.to_csv("cs2019_data_key.csv")
+data.to_csv("cs2019_full_clean.csv") # cleaned variables with all other variables
